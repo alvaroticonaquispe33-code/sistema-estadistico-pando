@@ -112,7 +112,7 @@ with c1:
 
 with c2:
     st.subheader("📌 Leyenda")
-    st.markdown("🔴 **Alta**\n\n🟡 **Media**\n\n🔵 **Baja**")
+    st.markdown("🔴 **Areas de Alta Densidad de Incidentes**\n\n🟡 **Areas de Densidad Moderada**\n\n🔵 **Areas de Baja Densidad o Dispersión Geoespacial**")
 
 # --- SECCIÓN: MAPA DE PUNTOS ---
 st.markdown("---")
@@ -141,7 +141,7 @@ with c4:
     st.markdown("""
     🔵 **Punto Azul:** Ubicación exacta del hecho.  
 
-    🟢🟡🔴 **Clusters:** Grupos de concentración de puntos (Haga clic para expandir).
+    🟢🟡🔴 **Agrupacion de puntos en cuadrantes:** Grupos de concentración de puntos de los incidentes suscitados (Haga clic para expandir).
     """)
 
 st.markdown("---")
