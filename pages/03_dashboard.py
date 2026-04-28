@@ -51,53 +51,49 @@ if df is None or df.empty:
     st.error("⚠️ No se detectaron datos limpios. Procese un Excel en la pestaña de Carga.")
     st.stop()
 
+
 # ----------------------------------
-# 🃏 CARTAS DE MÉTRICAS (Blindadas y Actualizadas)
+# 🃏 CARTAS DE MÉTRICAS (Formato Vertical para Máxima Claridad)
 # ----------------------------------
 st.markdown("---")
-m1, m2, m3, m4 = st.columns([1, 1, 1, 1])
 
 # Aseguramos que los nombres de las columnas no tengan espacios invisibles
 df_f.columns = [c.strip().upper() for c in df_f.columns]
 
-with m1:
-    if "BARRIO" in df_f.columns and not df_f.empty:
+if not df_f.empty:
+    # 1. BARRIO CRÍTICO
+    if "BARRIO" in df_f.columns:
         conteo_barrios = df_f["BARRIO"].value_counts()
-        st.metric(label="🚨 Barrio Crítico", value=conteo_barrios.index[0])
+        if not conteo_barrios.empty:
+            st.metric(label="🚨 Barrio Crítico", value=conteo_barrios.index[0])
 
-with m2:
-    if "TIPO_DE_HECHO" in df_f.columns and not df_f.empty:
+    # 2. DELITO FRECUENTE
+    if "TIPO_DE_HECHO" in df_f.columns:
         conteo_hechos = df_f["TIPO_DE_HECHO"].value_counts()
-        st.metric(label="⚠️ Delito Frecuente", value=conteo_hechos.index[0])
+        if not conteo_hechos.empty:
+            st.metric(label="⚠️ Delito Frecuente", value=conteo_hechos.index[0])
 
-with m3:
-    # Verificamos si existe 'DIA' o 'DIAS' por si acaso
+    # 3. DÍA CRÍTICO
     col_dia = next((c for c in df_f.columns if "DIA" in c), None)
-    if col_dia and not df_f.empty:
+    if col_dia:
         conteo_dia = df_f[col_dia].value_counts()
         if not conteo_dia.empty:
             st.metric(label="📅 Día Crítico", value=str(conteo_dia.index[0]).upper())
     else:
         st.metric(label="📅 Día Crítico", value="NO DETECTADO")
 
-with m4:
-    if "HORA" in df_f.columns and not df_f.empty:
-        # 1. Convertimos a texto y extraemos solo los primeros dos números (la hora)
-        # Esto limpia formatos como 21:00:00 o 210000
+    # 4. HORA CRÍTICA
+    if "HORA" in df_f.columns:
+        # Extraemos la hora y convertimos a formato 12h
         hora_cruda = df_f['HORA'].astype(str).str.extract(r'(\d{1,2})').iloc[:, 0]
-        
-        # 2. Obtenemos la hora más frecuente
         if not hora_cruda.empty:
             h_top = int(hora_cruda.value_counts().index[0])
-            
-            # 3. Lógica para convertir a formato AM/PM
             periodo = "AM" if h_top < 12 else "PM"
             hora_12 = h_top if 1 <= h_top <= 12 else (h_top - 12 if h_top > 12 else 12)
-            
-            # 4. Mostramos el resultado final: HRS 19 PM
             st.metric(label="🕒 Hora Crítica", value=f"HRS {hora_12} {periodo}")
     else:
         st.metric(label="🕒 Hora Crítica", value="S/D")
+
 # --- NUEVA UBICACIÓN DE FILTROS (Encima de la configuración) ---
 st.markdown("---")
 st.subheader("🔍 Filtrar Datos para el Gráfico")

@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import st_folium
-from folium.plugins import HeatMap, MarkerCluster
+from folium.plugins import HeatMap, MarkerCluster, Fullscreen
 
 # ----------------------------------
 # Configuración página
@@ -103,6 +103,9 @@ with c1:
     m_calor = folium.Map(location=[center_lat, center_lon], zoom_start=13)
     heat_data = df_f[["LAT", "LON"]].values.tolist()
     HeatMap(heat_data, radius=18, blur=20, min_opacity=0.3).add_to(m_calor)
+    Fullscreen(position='topleft', title='Ver Pantalla Completa', title_cancel='Salir', force_separate_button=True).add_to(m_calor)
+
+    st_folium(m_calor, width=None, height=450, key="calor_movil", returned_objects=[])
     
     # CAMBIO: width=None para que sea responsivo
     st_folium(m_calor, width=None, height=450, key="calor_movil", returned_objects=[])
@@ -120,7 +123,7 @@ with c3:
     st.subheader("📍 Mapa de Puntos Exactos")
     m_puntos = folium.Map(location=[center_lat, center_lon], zoom_start=13)
     cluster = MarkerCluster(name="Incidentes").add_to(m_puntos)
-    
+    Fullscreen(position='topleft', title='Ver Pantalla Completa', title_cancel='Salir', force_separate_button=True).add_to(m_puntos)
     for _, row in df_f.head(300).iterrows():
         pop = f"<b>Barrio:</b> {row.get('BARRIO','S/D')}<br><b>Hecho:</b> {row.get('TIPO_DE_HECHO','S/D')}"
         folium.Marker(
@@ -144,52 +147,39 @@ with c4:
 st.markdown("---")
 st.info(f"🔎 Registros visualizados: {len(df_f)}")
 
-# ---------------------------------------------------------
-# 🛡️ SECCIÓN DE INTELIGENCIA: RECOMENDACIÓN TÁCTICA
-# ---------------------------------------------------------
-st.markdown("---")
-st.subheader("🛡️ Recomendación de Despliegue Operativo")
 
-# Usamos df_f que es el DataFrame filtrado que ya tiene su Mapa de Calor
+
+# --- SECCIÓN DE INTELIGENCIA OPERATIVA ---
+st.markdown("---")
+st.subheader("🛡️ Recomendación de Despliegue (Mapa de Calor)")
+
+# Usamos df_f que es el DataFrame filtrado de su mapa
 if not df_f.empty:
     col1, col2 = st.columns(2)
 
     with col1:
         try:
-            # 1. Limpieza y extracción de hora
-            # Buscamos la columna HORA (en mayúsculas por su limpieza previa)
-            hora_col = "HORA" if "HORA" in df_f.columns else next((c for c in df_f.columns if "HORA" in c.upper()), None)
-            
-            if hora_col:
-                hora_cruda = df_f[hora_col].astype(str).str.extract(r'(\d{1,2})').iloc[:, 0]
-                if not hora_cruda.empty:
-                    h_top = int(hora_cruda.value_counts().index[0])
-                    # Conversión a formato 12h para el personal
-                    periodo = "AM" if h_top < 12 else "PM"
-                    hora_12 = h_top if 1 <= h_top <= 12 else (h_top - 12 if h_top > 12 else 12)
-                    st.success(f"**Ventana de Riesgo Crítico:** Aproximadamente a las {hora_12}:00 {periodo}")
-                else:
-                    st.warning("🕒 Hora Crítica: No detectada")
+            # Extraer hora de mayor incidencia
+            hora_data = df_f['HORA'].astype(str).str.extract(r'(\d{1,2})').iloc[:, 0].dropna()
+            if not hora_data.empty:
+                h_top = int(hora_data.value_counts().index[0])
+                periodo = "AM" if h_top < 12 else "PM"
+                hora_12 = h_top if 1 <= h_top <= 12 else (h_top - 12 if h_top > 12 else 12)
+                st.success(f"**Ventana de Riesgo:** Aproximadamente a las {hora_12}:00 {periodo}")
             else:
-                st.warning("🕒 Hora Crítica: Columna no encontrada")
+                st.warning("🕒 Hora: Sin datos suficientes")
         except:
-            st.error("🕒 Error al calcular la hora táctica")
+            st.error("🕒 Error en cálculo de hora")
 
     with col2:
-        # 2. Identificación del Día Crítico
-        dia_col = "DIA" if "DIA" in df_f.columns else next((c for c in df_f.columns if "DIA" in c.upper()), None)
-        
-        if dia_col and not df_f.empty:
-            dia_top = df_f[dia_col].value_counts().index[0]
-            st.success(f"**Día de Alta Incidencia:** {str(dia_top).upper()}")
+        # Extraer día de mayor incidencia
+        if 'DIA' in df_f.columns:
+            dia_top = df_f['DIA'].value_counts().index[0]
+            st.success(f"**Día Crítico:** {str(dia_top).upper()}")
         else:
-            st.warning("📅 Día Crítico: No detectado")
+            st.warning("📅 Día: Columna no encontrada")
 
-    # 3. Sugerencia dinámica según filtros
-    lugar = "la zona seleccionada"
-    if "BARRIO" in df_f.columns and len(df_f["BARRIO"].unique()) == 1:
-        lugar = df_f["BARRIO"].unique()[0]
-
-    st.warning(f"**Sugerencia del Sistema:** Incrementar patrullaje preventivo y paradas estacionarias en los sectores con mayor intensidad de calor (rojo) en **{lugar}**.")
+    # Sugerencia final basada en el calor
+    st.warning(f"**Sugerencia del Sistema:** Intensificar patrullaje preventivo en las zonas de mayor intensidad térmica (Rojo) detectadas. Se recomienda presencia policial 1 hora antes de la ventana de riesgo.")
 else:
-    st.info("Seleccione filtros para ver las recomendaciones tácticas.")
+    st.info("Cargue datos o aplique filtros para generar recomendaciones.")
