@@ -5,15 +5,16 @@ from pathlib import Path
 import unicodedata
 import re
 
-# Configuración inicial para móvil
+# Configuración inicial para móvil (SOLO UNA VEZ)
 st.set_page_config(page_title="Carga Policial Pando", layout="wide")
 
+# CSS Ajustado: Quitamos la línea que ocultaba el header
 st.markdown("""
     <style>
     .block-container { padding-top: 1rem; padding-bottom: 1rem; }
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
+    /* header {visibility: hidden;}  <-- ESTA LÍNEA SE ELIMINÓ PARA MOSTRAR LA FLECHA EN MÓVIL */
     </style>
     """, unsafe_allow_html=True)
 # ------------------------------

@@ -45,28 +45,11 @@ def cargar_datos_limpios(path):
     return df
 
 df = cargar_datos_limpios(FILEPATH)
-
+# Definimos df_f inmediatamente después de cargar los datos
+df_f = df.copy()
 if df is None or df.empty:
     st.error("⚠️ No se detectaron datos limpios. Procese un Excel en la pestaña de Carga.")
     st.stop()
-
-# ----------------------------------
-# 🔍 Filtros Dinámicos (Sidebar)
-# ----------------------------------
-st.sidebar.header("🔍 Filtros de Inteligencia")
-df_f = df.copy()
-
-if "GESTION" in df_f.columns:
-    gestiones = sorted(df_f["GESTION"].unique().tolist(), reverse=True)
-    sel_gestion = st.sidebar.multiselect("Gestión:", gestiones, default=gestiones)
-    if sel_gestion:
-        df_f = df_f[df_f["GESTION"].isin(sel_gestion)]
-
-if "MES" in df_f.columns:
-    meses = df_f["MES"].unique().tolist()
-    sel_mes = st.sidebar.multiselect("Mes:", meses, default=meses)
-    if sel_mes:
-        df_f = df_f[df_f["MES"].isin(sel_mes)]
 
 # ----------------------------------
 # 🃏 CARTAS DE MÉTRICAS (Blindadas y Actualizadas)
@@ -115,6 +98,25 @@ with m4:
             st.metric(label="🕒 Hora Crítica", value=f"HRS {hora_12} {periodo}")
     else:
         st.metric(label="🕒 Hora Crítica", value="S/D")
+# --- NUEVA UBICACIÓN DE FILTROS (Encima de la configuración) ---
+st.markdown("---")
+st.subheader("🔍 Filtrar Datos para el Gráfico")
+f1, f2 = st.columns(2)
+
+# Reiniciamos df_f para que el filtro de arriba afecte al gráfico de abajo
+with f1:
+    if "GESTION" in df.columns:
+        gestiones = sorted(df["GESTION"].unique().tolist(), reverse=True)
+        sel_gestion = st.multiselect("Filtrar por Gestión:", gestiones, default=gestiones)
+        if sel_gestion:
+            df_f = df_f[df_f["GESTION"].isin(sel_gestion)]
+
+with f2:
+    if "MES" in df.columns:
+        meses = sorted(df["MES"].unique().tolist())
+        sel_mes = st.multiselect("Filtrar por Mes:", meses, default=meses)
+        if sel_mes:
+            df_f = df_f[df_f["MES"].isin(sel_mes)]    
 # ----------------------------------
 # ⚙️ CONFIGURACIÓN DEL GRÁFICO (Flexible)
 # ----------------------------------
@@ -161,7 +163,8 @@ if not df_chart.empty:
             labels={var_analisis: var_analisis.replace("_", " "), "CANTIDAD_CASOS": "Cantidad"}
         )
         fig.update_traces(texttemplate='%{text}', textposition='outside')
-
+        # Esto elimina los decimales (.5) y comas de los años
+        fig.update_xaxes(type='category')
     elif tipo_grafico == "Líneas (Tendencia)":
         if var_analisis == "MES":
             orden_meses = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"]

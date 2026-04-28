@@ -143,3 +143,53 @@ with c4:
 
 st.markdown("---")
 st.info(f"🔎 Registros visualizados: {len(df_f)}")
+
+# ---------------------------------------------------------
+# 🛡️ SECCIÓN DE INTELIGENCIA: RECOMENDACIÓN TÁCTICA
+# ---------------------------------------------------------
+st.markdown("---")
+st.subheader("🛡️ Recomendación de Despliegue Operativo")
+
+# Usamos df_f que es el DataFrame filtrado que ya tiene su Mapa de Calor
+if not df_f.empty:
+    col1, col2 = st.columns(2)
+
+    with col1:
+        try:
+            # 1. Limpieza y extracción de hora
+            # Buscamos la columna HORA (en mayúsculas por su limpieza previa)
+            hora_col = "HORA" if "HORA" in df_f.columns else next((c for c in df_f.columns if "HORA" in c.upper()), None)
+            
+            if hora_col:
+                hora_cruda = df_f[hora_col].astype(str).str.extract(r'(\d{1,2})').iloc[:, 0]
+                if not hora_cruda.empty:
+                    h_top = int(hora_cruda.value_counts().index[0])
+                    # Conversión a formato 12h para el personal
+                    periodo = "AM" if h_top < 12 else "PM"
+                    hora_12 = h_top if 1 <= h_top <= 12 else (h_top - 12 if h_top > 12 else 12)
+                    st.success(f"**Ventana de Riesgo Crítico:** Aproximadamente a las {hora_12}:00 {periodo}")
+                else:
+                    st.warning("🕒 Hora Crítica: No detectada")
+            else:
+                st.warning("🕒 Hora Crítica: Columna no encontrada")
+        except:
+            st.error("🕒 Error al calcular la hora táctica")
+
+    with col2:
+        # 2. Identificación del Día Crítico
+        dia_col = "DIA" if "DIA" in df_f.columns else next((c for c in df_f.columns if "DIA" in c.upper()), None)
+        
+        if dia_col and not df_f.empty:
+            dia_top = df_f[dia_col].value_counts().index[0]
+            st.success(f"**Día de Alta Incidencia:** {str(dia_top).upper()}")
+        else:
+            st.warning("📅 Día Crítico: No detectado")
+
+    # 3. Sugerencia dinámica según filtros
+    lugar = "la zona seleccionada"
+    if "BARRIO" in df_f.columns and len(df_f["BARRIO"].unique()) == 1:
+        lugar = df_f["BARRIO"].unique()[0]
+
+    st.warning(f"**Sugerencia del Sistema:** Incrementar patrullaje preventivo y paradas estacionarias en los sectores con mayor intensidad de calor (rojo) en **{lugar}**.")
+else:
+    st.info("Seleccione filtros para ver las recomendaciones tácticas.")
